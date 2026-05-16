@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:orientation="vertical"
+              android:padding="24dp"
+              android:background="#FFFFFF">
+
+    <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Nuevo Gasto"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#4CAF50"
+            android:layout_marginBottom="16dp"/>
+
+    <EditText
+            android:id="@+id/et_nuevo_proveedor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Proveedor"
+            android:textColor="#000000"
+            android:textColorHint="#666666"
+            android:inputType="textCapSentences"
+            android:layout_marginBottom="12dp"/>
+
+    <EditText
+            android:id="@+id/et_nuevo_monto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Precio"
+            android:textColor="#000000"
+            android:textColorHint="#666666"
+            android:inputType="numberDecimal"
+            android:layout_marginBottom="12dp"/>
+    <EditText
+            android:id="@+id/et_nueva_cantidad"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Cantidad (1)"
+            android:textColor="#000000"
+            android:textColorHint="#666666"
+            android:inputType="number"
+            android:layout_marginBottom="12dp"/>
+
+    <EditText
+            android:id="@+id/et_nueva_descripcion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Descripción"
+            android:textColor="#000000"
+            android:textColorHint="#666666"
+            android:inputType="textCapSentences"/>
+
+</LinearLayout>

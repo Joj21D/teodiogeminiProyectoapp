@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:app="http://schemas.android.com/apk/res-auto"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:fitsSystemWindows="true"
+                android:background="#F0F0F0">
+
+    <LinearLayout
+            android:id="@+id/header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:background="#FFFFFF"
+            android:elevation="4dp"
+            android:gravity="center_vertical">
+
+        <ImageButton
+                android:id="@+id/btn_volver"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_revert"
+                app:tint="#333333"/>
+
+        <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1"/>
+
+        <TextView
+                android:id="@+id/tv_modo_fecha"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Diario: 15/05"
+                android:textSize="14sp"
+                android:textColor="#333333"
+                android:layout_marginEnd="8dp"/>
+
+        <ImageButton
+                android:id="@+id/btn_importar"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_upload"
+                android:layout_marginEnd="8dp"
+                app:tint="#2196F3"/>
+
+        <ImageButton
+                android:id="@+id/btn_exportar"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_save"
+                android:layout_marginEnd="8dp"
+                app:tint="#4CAF50"/>
+
+        <ImageButton
+                android:id="@+id/btn_toggle_modo"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@android:drawable/btn_default_small"
+                android:src="@android:drawable/ic_menu_today"
+                android:backgroundTint="#4CAF50"/>
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_lista_calculadora"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@id/header"
+            android:layout_above="@id/footer"
+            android:padding="8dp"/>
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/btn_agregar_gasto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@id/footer"
+            android:layout_alignParentEnd="true"
+            android:layout_margin="16dp"
+            android:src="@android:drawable/ic_input_add"
+            app:backgroundTint="#4CAF50"
+            app:tint="#FFFFFF" />
+    <LinearLayout
+            android:id="@+id/footer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:background="#4CAF50"
+            android:padding="16dp">
+
+        <TextView
+                android:id="@+id/tv_monto_total"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Monto total gastado: $ 0.0"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:gravity="center"/>
+    </LinearLayout>
+
+</RelativeLayout>
