@@ -1,43 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:padding="32dp"
-        android:background="#F5F5F5">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical"
+              android:gravity="center"
+              android:background="#F5F5F5"
+              android:padding="24dp">
 
     <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="LGW"
-            android:textSize="24sp"
+            android:textColor="#2196F3"
+            android:textSize="28sp"
             android:textStyle="bold"
-            android:textColor="#333333"
-            android:layout_marginBottom="48dp"/>
+            android:layout_marginBottom="32dp"/>
 
     <Button
             android:id="@+id/btn_abrir_calculadora"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Tabla de datos"
-            android:layout_marginBottom="16dp"
-            android:backgroundTint="#4CAF50"/>
+            android:layout_height="60dp"
+            android:text="Tabla de Datos / Calculadora"
+            android:backgroundTint="#2196F3"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="16dp"/>
 
     <Button
-            android:id="@+id/btn_exportar"
+            android:id="@+id/btn_resumen_main"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Resumen general"
-            android:layout_marginBottom="16dp"
-            android:backgroundTint="#2196F3"/>
+            android:layout_height="60dp"
+            android:text="Resumen General"
+            android:backgroundTint="#4CAF50"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="16dp"/>
 
     <Button
-            android:id="@+id/btn_importar"
+            android:id="@+id/btn_instrucciones_main"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Importar Info"
-            android:backgroundTint="#FF9800"/>
+            android:layout_height="60dp"
+            android:text="Instrucciones"
+            android:backgroundTint="#FF9800"
+            android:textColor="#FFFFFF"/>
 
 </LinearLayout>

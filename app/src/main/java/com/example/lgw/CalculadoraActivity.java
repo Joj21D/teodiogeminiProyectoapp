@@ -1,6 +1,6 @@
-package com.example.lgw; // Verifica que coincida exactamente con tu paquete
+package com.example.lgw;
 
-import android.app.Dialog; // ¡Esta era la herramienta que faltaba para borrar lo rojo!
+import android.app.Dialog;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.*;
@@ -11,16 +11,14 @@ import java.util.List;
 
 public class CalculadoraActivity extends AppCompatActivity {
 
-    // 1. Componentes de la Interfaz Visual
-    private ImageButton btnToggleModo, btnVolver, btnExportar, btnImportar;
+    private ImageButton btnVolver;
+    private View btnExportar, btnImportar;
     private TextView tvModoFecha, tvMontoTotal;
     private RecyclerView rvListaCalculadora;
     private com.google.android.material.floatingactionbutton.FloatingActionButton btnAgregar;
 
-    // 2. Componentes de Datos y Control
     private GastoAdapter adapter;
     private List<Gasto> listaGastosReales;
-    private boolean esModoDiario = true;
     private String fechaRealGuardada = "Sin registros";
 
     @Override
@@ -28,92 +26,77 @@ public class CalculadoraActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_calculadora);
 
-        // --- PASO A: VINCULACIÓN DE VISTAS ---
-        btnToggleModo = findViewById(R.id.btn_toggle_modo);
         btnVolver = findViewById(R.id.btn_volver);
-        btnExportar = findViewById(R.id.btn_exportar);
-        btnImportar = findViewById(R.id.btn_importar);
         tvModoFecha = findViewById(R.id.tv_modo_fecha);
         tvMontoTotal = findViewById(R.id.tv_monto_total);
         rvListaCalculadora = findViewById(R.id.rv_lista_calculadora);
         btnAgregar = findViewById(R.id.btn_agregar_gasto);
+        btnExportar = findViewById(R.id.btn_exportar);
+        btnImportar = findViewById(R.id.btn_importar);
 
-        // --- PASO B: CONEXIÓN A BASE DE DATO REAL Y CÁLCULOS ---
         DatabaseHelper db = new DatabaseHelper(CalculadoraActivity.this);
         listaGastosReales = db.obtenerTodosLosGastos();
 
-        double totalGastado = 0.0;
-
+        // --- MATEMÁTICA ESTABILIZADA: COMPRAS VS VENTAS ---
+        double totalCompras = 0.0;
+        double totalVentas = 0.0;
         if (!listaGastosReales.isEmpty()) {
             fechaRealGuardada = listaGastosReales.get(listaGastosReales.size() - 1).getFecha();
             for (Gasto g : listaGastosReales) {
-                totalGastado += g.getMonto();
+                if (g.getEsVenta() == 1) {
+                    totalVentas += g.getMonto();
+                } else {
+                    totalCompras += g.getMonto();
+                }
             }
         }
 
-        tvModoFecha.setText("Diario: " + fechaRealGuardada);
-        java.text.DecimalFormat formateador = new java.text.DecimalFormat("#,###");
-        tvMontoTotal.setText("Monto total gastado: $ " + formateador.format(totalGastado));
+        double totalNeto = totalVentas - totalCompras;
 
-        // --- PASO C: CONFIGURACIÓN DEL RECYCLERVIEW (LISTA) ---
+        tvModoFecha.setText("Registros: " + fechaRealGuardada);
+        java.text.DecimalFormat formateador = new java.text.DecimalFormat("#,###");
+
+        // Renderizado único de balance en el componente de texto
+        tvMontoTotal.setText("Compras: $" + formateador.format(totalCompras) +
+                " | Ventas: $" + formateador.format(totalVentas) +
+                "\nTotal Neto: $" + formateador.format(totalNeto));
+
         rvListaCalculadora.setLayoutManager(new LinearLayoutManager(this));
         adapter = new GastoAdapter(listaGastosReales);
         rvListaCalculadora.setAdapter(adapter);
 
-        // --- PASO D: CONTROLADORES DE EVENTOS (LISTENERS) ---
-        btnAgregar.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mostrarDialogoAgregar();
-            }
-        });
+        btnAgregar.setOnClickListener(v -> mostrarDialogoAgregar());
+        btnVolver.setOnClickListener(v -> finish());
 
-        btnVolver.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                finish();
-            }
-        });
-
-        btnExportar.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(CalculadoraActivity.this, "Función Exportar en construcción", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        btnImportar.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(CalculadoraActivity.this, "Función Importar en construcción", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        btnToggleModo.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (esModoDiario) {
-                    tvModoFecha.setText("Semanal: " + fechaRealGuardada);
-                    btnToggleModo.setImageTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#2196F3")));
-                    Toast.makeText(CalculadoraActivity.this, "Vista Semanal", Toast.LENGTH_SHORT).show();
-                    esModoDiario = false;
-                } else {
-                    tvModoFecha.setText("Diario: " + fechaRealGuardada);
-                    btnToggleModo.setImageTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#4CAF50")));
-                    Toast.makeText(CalculadoraActivity.this, "Vista Diaria", Toast.LENGTH_SHORT).show();
-                    esModoDiario = true;
+        // Módulos I/O de Comunicación Externa
+        if (btnExportar != null) {
+            btnExportar.setOnClickListener(v -> {
+                try {
+                    ExportadorArchivos exportador = new ExportadorArchivos();
+                    exportador.exportarCsv(CalculadoraActivity.this, listaGastosReales);
+                    Toast.makeText(CalculadoraActivity.this, "¡Archivo exportado con éxito!", Toast.LENGTH_LONG).show();
+                } catch (Exception e) {
+                    Toast.makeText(CalculadoraActivity.this, "Error al exportar", Toast.LENGTH_SHORT).show();
                 }
-            }
-        });
+            });
+        }
+
+        if (btnImportar != null) {
+            btnImportar.setOnClickListener(v -> {
+                android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_OPEN_DOCUMENT);
+                intent.addCategory(android.content.Intent.CATEGORY_OPENABLE);
+                intent.setType("*/*");
+                startActivityForResult(intent, 200);
+            });
+        }
     }
 
     private void mostrarDialogoAgregar() {
         View viewDialogo = getLayoutInflater().inflate(R.layout.dialog_agregar_gasto, null);
-
-        android.widget.EditText etProveedor = viewDialogo.findViewById(R.id.et_nuevo_proveedor);
-        android.widget.EditText etMonto = viewDialogo.findViewById(R.id.et_nuevo_monto);
-        android.widget.EditText etCantidad = viewDialogo.findViewById(R.id.et_nueva_cantidad);
-        android.widget.EditText etDescripcion = viewDialogo.findViewById(R.id.et_nueva_descripcion);
+        EditText etProveedor = viewDialogo.findViewById(R.id.et_nuevo_proveedor);
+        EditText etMonto = viewDialogo.findViewById(R.id.et_nuevo_monto);
+        EditText etCantidad = viewDialogo.findViewById(R.id.et_nueva_cantidad);
+        EditText etDescripcion = viewDialogo.findViewById(R.id.et_nueva_descripcion);
 
         new androidx.appcompat.app.AlertDialog.Builder(this)
                 .setView(viewDialogo)
@@ -128,35 +111,38 @@ public class CalculadoraActivity extends AppCompatActivity {
                         return;
                     }
 
+                    RadioGroup rgTipoTransaccion = viewDialogo.findViewById(R.id.rg_tipo_transaccion);
+                    int esVenta = 0;
+                    if (rgTipoTransaccion.getCheckedRadioButtonId() == R.id.rb_venta) {
+                        esVenta = 1;
+                    }
+
                     double montoUnitario = Double.parseDouble(montoStr);
                     String cantStr = etCantidad.getText().toString().trim();
                     int cantidad = cantStr.isEmpty() ? 1 : Integer.parseInt(cantStr);
-
                     double montoTotalCalculado = montoUnitario * cantidad;
 
                     String descFinal = descStr;
                     if (cantidad > 1) {
-                        descFinal = descStr + " (x" + cantidad + ")";
+                        String precioIndStr = (montoUnitario % 1 == 0) ? String.valueOf((int)montoUnitario) : String.valueOf(montoUnitario);
+                        descFinal = descStr + " (x" + cantidad + " a $" + precioIndStr + " c/u)";
                     }
 
                     String fechaHoy = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(new java.util.Date());
 
-                    Gasto nuevoGasto = new Gasto(fechaHoy, proveedorStr, montoTotalCalculado, descFinal);
-                    DatabaseHelper db = new DatabaseHelper(CalculadoraActivity.this);
-                    db.insertarGasto(nuevoGasto);
+                    Gasto nuevoGasto = new Gasto(fechaHoy, proveedorStr, montoTotalCalculado, descFinal, esVenta);
+
+                    DatabaseHelper dbBaza = new DatabaseHelper(CalculadoraActivity.this);
+                    dbBaza.insertarGasto(nuevoGasto);
 
                     finish();
                     startActivity(getIntent());
                     overridePendingTransition(0, 0);
-
-                    Toast.makeText(CalculadoraActivity.this, "Gasto añadido", Toast.LENGTH_SHORT).show();
                 })
                 .setNegativeButton("Cancelar", null)
                 .show();
     }
 
-    // Método para mostrar la tarjetita flotante
-    // Método para mostrar la tarjetita flotante
     public void mostrarDialogoDetalle(final Gasto gastoSeleccionado) {
         final Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.dialog_detalle_gasto);
@@ -172,24 +158,38 @@ public class CalculadoraActivity extends AppCompatActivity {
         Button btnCerrar = dialog.findViewById(R.id.btnDetalleCerrar);
 
         etNombre.setText(gastoSeleccionado.getProveedor());
-        etPrecio.setText(String.valueOf(gastoSeleccionado.getMonto()));
+        java.text.DecimalFormat formateador = new java.text.DecimalFormat("#,###");
+        etPrecio.setText(formateador.format(gastoSeleccionado.getMonto()));
         etDescripcion.setText(gastoSeleccionado.getDescripcion());
 
-        // BOTÓN CERRAR / CANCELAR
+        btnBorrar.setOnClickListener(v -> {
+            new androidx.appcompat.app.AlertDialog.Builder(CalculadoraActivity.this)
+                    .setTitle("¿Borrar Gasto?")
+                    .setMessage("¿Estás seguro de que quieres eliminar esto de la lista?")
+                    .setPositiveButton("Sí, borrar", (dialogInterno, which) -> {
+                        DatabaseHelper database = new DatabaseHelper(CalculadoraActivity.this);
+                        database.borrarGastoSinId(gastoSeleccionado);
+                        Toast.makeText(CalculadoraActivity.this, "Gasto eliminado", Toast.LENGTH_SHORT).show();
+                        dialog.dismiss();
+                        finish();
+                        startActivity(getIntent());
+                        overridePendingTransition(0, 0);
+                    })
+                    .setNegativeButton("Cancelar", null)
+                    .show();
+        });
+
         btnCerrar.setOnClickListener(v -> {
             if (btnCerrar.getText().toString().equals("Cancelar")) {
                 etNombre.setFocusable(false);
                 etPrecio.setFocusable(false);
                 etDescripcion.setFocusable(false);
-
                 etNombre.setTextColor(android.graphics.Color.BLACK);
                 etPrecio.setTextColor(android.graphics.Color.BLACK);
                 etDescripcion.setTextColor(android.graphics.Color.BLACK);
-
                 etNombre.setText(gastoSeleccionado.getProveedor());
-                etPrecio.setText(String.valueOf(gastoSeleccionado.getMonto()));
+                etPrecio.setText(formateador.format(gastoSeleccionado.getMonto()));
                 etDescripcion.setText(gastoSeleccionado.getDescripcion());
-
                 btnEditar.setVisibility(View.VISIBLE);
                 btnGuardar.setVisibility(View.GONE);
                 btnCerrar.setText("Cerrar");
@@ -198,7 +198,6 @@ public class CalculadoraActivity extends AppCompatActivity {
             }
         });
 
-        // BOTÓN EDITAR (AHORA CON EL VIGILANTE INTELIGENTE)
         btnEditar.setOnClickListener(v -> {
             etNombre.setFocusableInTouchMode(true);
             etPrecio.setFocusableInTouchMode(true);
@@ -207,7 +206,6 @@ public class CalculadoraActivity extends AppCompatActivity {
             int colorAmarillo = android.graphics.Color.parseColor("#FBC02D");
             int colorNegro = android.graphics.Color.parseColor("#000000");
 
-            // --- EL VIGILANTE DE ESTADO ALTERADO ---
             android.text.TextWatcher vigilante = new android.text.TextWatcher() {
                 @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
                 @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
@@ -216,7 +214,9 @@ public class CalculadoraActivity extends AppCompatActivity {
                         etNombre.setTextColor(colorAmarillo);
                     } else { etNombre.setTextColor(colorNegro); }
 
-                    if (!etPrecio.getText().toString().equals(String.valueOf(gastoSeleccionado.getMonto()))) {
+                    String precioLimpio = etPrecio.getText().toString().replaceAll("[^0-9]", "");
+                    String precioOriginalLimpio = String.valueOf((int)gastoSeleccionado.getMonto());
+                    if (!precioLimpio.equals(precioOriginalLimpio)) {
                         etPrecio.setTextColor(colorAmarillo);
                     } else { etPrecio.setTextColor(colorNegro); }
 
@@ -235,44 +235,59 @@ public class CalculadoraActivity extends AppCompatActivity {
             btnCerrar.setText("Cancelar");
         });
 
-        // --- EL NUEVO MOTOR DE GUARDADO ---
-        // --- EL NUEVO MOTOR DE GUARDADO (VERSIÓN SIN ID) ---
         btnGuardar.setOnClickListener(v -> {
             try {
-                // 1. Guardamos las "huellas digitales" antiguas para encontrar el archivo
                 String proveedorAntiguo = gastoSeleccionado.getProveedor();
                 double montoAntiguo = gastoSeleccionado.getMonto();
 
-                // 2. Actualizamos los datos en el objeto con lo que tú escribiste
                 gastoSeleccionado.setProveedor(etNombre.getText().toString());
-                gastoSeleccionado.setMonto(Double.parseDouble(etPrecio.getText().toString()));
+                String precioNumerico = etPrecio.getText().toString().replaceAll("[^0-9.]", "");
+                gastoSeleccionado.setMonto(Double.parseDouble(precioNumerico));
                 gastoSeleccionado.setDescripcion(etDescripcion.getText().toString());
 
-                // 3. Enviamos los datos nuevos y las huellas antiguas a la Base de Datos
-                DatabaseHelper db = new DatabaseHelper(CalculadoraActivity.this);
-                db.actualizarGastoSinId(gastoSeleccionado, proveedorAntiguo, montoAntiguo);
+                DatabaseHelper database = new DatabaseHelper(CalculadoraActivity.this);
+                database.actualizarGastoSinId(gastoSeleccionado, proveedorAntiguo, montoAntiguo);
 
                 Toast.makeText(CalculadoraActivity.this, "Cambios guardados", Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
-
-                // Recargamos la pantalla
                 finish();
                 startActivity(getIntent());
                 overridePendingTransition(0, 0);
-
             } catch (Exception e) {
                 Toast.makeText(CalculadoraActivity.this, "Error al guardar", Toast.LENGTH_SHORT).show();
             }
         });
 
         dialog.show();
-
-        // Parche de estiramiento visual
         if (dialog.getWindow() != null) {
             dialog.getWindow().setLayout(
                     android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                     android.view.ViewGroup.LayoutParams.WRAP_CONTENT
             );
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, android.content.Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 200 && resultCode == RESULT_OK && data != null) {
+            try {
+                java.io.InputStream inputStream = getContentResolver().openInputStream(data.getData());
+                LectorArchivos lector = new LectorArchivos();
+                java.util.List<Gasto> gastosImportados = lector.procesarArchivo(inputStream);
+                DatabaseHelper db = new DatabaseHelper(this);
+                int agregados = 0;
+                for (Gasto nuevoGasto : gastosImportados) {
+                    db.insertarGasto(nuevoGasto);
+                    agregados++;
+                }
+                Toast.makeText(this, "¡" + agregados + " gastos importados con éxito!", Toast.LENGTH_LONG).show();
+                finish();
+                startActivity(getIntent());
+                overridePendingTransition(0, 0);
+            } catch (Exception e) {
+                Toast.makeText(this, "Error al procesar el archivo", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 }

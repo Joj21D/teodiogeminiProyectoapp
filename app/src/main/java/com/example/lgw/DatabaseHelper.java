@@ -8,8 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "TiendaMamaDB";
-    // ¡VERSIÓN 2! Esto reinicia la base de datos para inyectar la nueva columna
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 3; // ¡NUEVA VERSIÓN!
     private static final String TABLE_GASTOS = "gastos";
 
     public DatabaseHelper(Context context) {
@@ -24,7 +23,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + "proveedor TEXT,"
                 + "monto REAL,"
                 + "descripcion TEXT,"
-                + "fue_editado INTEGER DEFAULT 0" + ")"; // <--- Nueva columna
+                + "fue_editado INTEGER DEFAULT 0,"
+                + "es_venta INTEGER DEFAULT 0" + ")"; // <--- Nueva columna para saber si es venta
         db.execSQL(CREATE_TABLE);
     }
 
@@ -42,7 +42,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put("proveedor", gasto.getProveedor());
         values.put("monto", gasto.getMonto());
         values.put("descripcion", gasto.getDescripcion());
-        values.put("fue_editado", gasto.getFueEditado()); // Guardamos el 0
+        values.put("fue_editado", gasto.getFueEditado());
+        values.put("es_venta", gasto.getEsVenta()); // Guardamos si es venta o compra
 
         db.insert(TABLE_GASTOS, null, values);
         db.close();
@@ -62,7 +63,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         cursor.getString(2),
                         cursor.getDouble(3),
                         cursor.getString(4),
-                        cursor.getInt(5)     // <--- Leemos si es 0 o 1
+                        cursor.getInt(5),    // fue_editado
+                        cursor.getInt(6)     // es_venta
                 );
                 listaGastos.add(gasto);
             } while (cursor.moveToNext());
@@ -72,7 +74,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return listaGastos;
     }
 
-    // Usaremos solo este motor, asegurando inyectar el 1 (Amarillo)
     public void actualizarGastoSinId(Gasto gastoNuevo, String proveedorAntiguo, double montoAntiguo) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues valores = new ContentValues();
@@ -80,11 +81,23 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         valores.put("proveedor", gastoNuevo.getProveedor());
         valores.put("monto", gastoNuevo.getMonto());
         valores.put("descripcion", gastoNuevo.getDescripcion());
-        valores.put("fue_editado", 1); // <--- ¡AQUÍ ESTÁ LA MAGIA! Lo marcamos como editado para siempre
+        valores.put("fue_editado", 1);
+        // No actualizamos es_venta porque si era venta, sigue siendo venta
 
         try {
             db.update(TABLE_GASTOS, valores, "proveedor = ? AND monto = ? AND fecha = ?",
                     new String[]{proveedorAntiguo, String.valueOf(montoAntiguo), gastoNuevo.getFecha()});
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        db.close();
+    }
+
+    public void borrarGastoSinId(Gasto gastoTarget) {
+        android.database.sqlite.SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            db.delete("gastos", "proveedor = ? AND monto = ? AND fecha = ?",
+                    new String[]{gastoTarget.getProveedor(), String.valueOf(gastoTarget.getMonto()), gastoTarget.getFecha()});
         } catch (Exception e) {
             e.printStackTrace();
         }

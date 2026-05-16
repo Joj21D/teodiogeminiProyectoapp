@@ -1,95 +1,41 @@
 package com.example.lgw;
 
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
 
+    private Button btnCalculadora, btnResumen, btnInstrucciones;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        // 1. Enlazamos los 3 botones del XML
-        Button btnAbrirCalculadora = findViewById(R.id.btn_abrir_calculadora);
-        Button btnExportar = findViewById(R.id.btn_exportar);
-        Button btnImportar = findViewById(R.id.btn_importar);
+        // Vinculación con los nuevos IDs limpios
+        btnCalculadora = findViewById(R.id.btn_abrir_calculadora);
+        btnResumen = findViewById(R.id.btn_resumen_main);
+        btnInstrucciones = findViewById(R.id.btn_instrucciones_main);
 
-        // 2. Lógica: ABRIR CALCULADORA
-        btnAbrirCalculadora.setOnClickListener(v -> {
-            // Viajamos desde MainActivity hacia CalculadoraActivity
+        // Evento: Abrir Calculadora
+        btnCalculadora.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, CalculadoraActivity.class);
             startActivity(intent);
         });
-        // 3. Lógica: EXPORTAR INFO
-        btnExportar.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Instanciamos la base de datos y el exportador
-                DatabaseHelper db = new DatabaseHelper(MainActivity.this);
-                ExportadorArchivos exportador = new ExportadorArchivos();
 
-                // Obtenemos la lista y la exportamos
-                java.util.List<Gasto> listaGastos = db.obtenerTodosLosGastos();
-                String rutaGuardada = exportador.exportarCsv(listaGastos);
-
-                // Verificamos si funcionó para mostrar el mensaje
-                if (rutaGuardada != null) {
-                    Toast.makeText(MainActivity.this, "Datos guardados en: " + rutaGuardada, Toast.LENGTH_LONG).show();
-                } else {
-                    Toast.makeText(MainActivity.this, "Error al exportar (Revisa permisos de almacenamiento)", Toast.LENGTH_SHORT).show();
-                }
-            }
+        // Evento: Resumen General (Módulo en construcción)
+        btnResumen.setOnClickListener(v -> {
+            Toast.makeText(MainActivity.this, "Módulo de Resumen General en construcción", Toast.LENGTH_SHORT).show();
         });
 
-        // 4. Lógica: IMPORTAR INFO (Tu código original)
-        btnImportar.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                intent.setType("*/*");
-                startActivityForResult(intent, 1);
-            }
+        // Evento: Mostrar Instrucciones amigables para tu madre
+        btnInstrucciones.setOnClickListener(v -> {
+            Toast.makeText(MainActivity.this,
+                    "Manual: Presiona 'Tabla de datos' para registrar compras. Toca 'Detalle' en cualquier elemento para modificarlo o ver notas.",
+                    Toast.LENGTH_LONG).show();
         });
-    }
-
-    // --- MANTENEMOS TU BACKEND ORIGINAL INTACTO ---
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 1 && resultCode == RESULT_OK && data != null) {
-            Uri uri = data.getData();
-            leerArchivo(uri);
-        }
-    }
-
-    private void leerArchivo(Uri uri) {
-        try {
-            InputStream inputStream = getContentResolver().openInputStream(uri);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-            String linea;
-            StringBuilder textoLeido = new StringBuilder();
-            int contador = 0;
-            while ((linea = reader.readLine()) != null && contador < 5) {
-                textoLeido.append(linea).append("\n");
-                contador++;
-            }
-            reader.close();
-            inputStream.close();
-            Toast.makeText(this, "Contenido:\n" + textoLeido.toString(), Toast.LENGTH_LONG).show();
-        } catch (Exception e) {
-            Toast.makeText(this, "Error al intentar leer el archivo", Toast.LENGTH_SHORT).show();
-        }
     }
 }
