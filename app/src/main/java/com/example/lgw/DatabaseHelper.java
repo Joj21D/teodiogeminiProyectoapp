@@ -7,17 +7,15 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
-    // Constantes de configuración de la Bóveda
     private static final String DATABASE_NAME = "TiendaMamaDB";
-    private static final int DATABASE_VERSION = 1;
+    // ¡VERSIÓN 2! Esto reinicia la base de datos para inyectar la nueva columna
+    private static final int DATABASE_VERSION = 2;
     private static final String TABLE_GASTOS = "gastos";
 
-    // Constructor
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
-    // Se ejecuta solo la primera vez que se instala la app para crear la tabla
     @Override
     public void onCreate(SQLiteDatabase db) {
         String CREATE_TABLE = "CREATE TABLE " + TABLE_GASTOS + "("
@@ -25,59 +23,71 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + "fecha TEXT,"
                 + "proveedor TEXT,"
                 + "monto REAL,"
-                + "descripcion TEXT" + ")";
+                + "descripcion TEXT,"
+                + "fue_editado INTEGER DEFAULT 0" + ")"; // <--- Nueva columna
         db.execSQL(CREATE_TABLE);
     }
 
-    // Se ejecuta si en el futuro cambias la versión de la base de datos
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_GASTOS);
         onCreate(db);
     }
 
-    // Herramienta para guardar un objeto Gasto en la tabla
     public void insertarGasto(Gasto gasto) {
-        SQLiteDatabase db = this.getWritableDatabase(); // Abrimos la bóveda en modo escritura
-        ContentValues values = new ContentValues(); // Empaquetamos los datos
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
 
         values.put("fecha", gasto.getFecha());
         values.put("proveedor", gasto.getProveedor());
         values.put("monto", gasto.getMonto());
         values.put("descripcion", gasto.getDescripcion());
+        values.put("fue_editado", gasto.getFueEditado()); // Guardamos el 0
 
-        // Insertamos la fila y cerramos
         db.insert(TABLE_GASTOS, null, values);
         db.close();
     }
-    // Herramienta para sacar todos los gastos de la bóveda
+
     public java.util.List<Gasto> obtenerTodosLosGastos() {
         java.util.List<Gasto> listaGastos = new java.util.ArrayList<>();
-
-        // Consulta en lenguaje SQL puro: "Tráeme todo de la tabla gastos"
         String selectQuery = "SELECT * FROM " + TABLE_GASTOS;
 
-        SQLiteDatabase db = this.getReadableDatabase(); // Abrimos en modo lectura
+        SQLiteDatabase db = this.getReadableDatabase();
         android.database.Cursor cursor = db.rawQuery(selectQuery, null);
 
-        // Si el cursor encuentra al menos una fila, empezamos a recorrer
         if (cursor.moveToFirst()) {
             do {
-                // El índice 0 es el ID autoincremental, el 1 es fecha, 2 proveedor, etc.
                 Gasto gasto = new Gasto(
-                        cursor.getString(1), // fecha
-                        cursor.getString(2), // proveedor
-                        cursor.getDouble(3), // monto
-                        cursor.getString(4)  // descripcion
+                        cursor.getString(1),
+                        cursor.getString(2),
+                        cursor.getDouble(3),
+                        cursor.getString(4),
+                        cursor.getInt(5)     // <--- Leemos si es 0 o 1
                 );
                 listaGastos.add(gasto);
             } while (cursor.moveToNext());
         }
-
-        // Limpieza de memoria
         cursor.close();
         db.close();
-
         return listaGastos;
+    }
+
+    // Usaremos solo este motor, asegurando inyectar el 1 (Amarillo)
+    public void actualizarGastoSinId(Gasto gastoNuevo, String proveedorAntiguo, double montoAntiguo) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues valores = new ContentValues();
+
+        valores.put("proveedor", gastoNuevo.getProveedor());
+        valores.put("monto", gastoNuevo.getMonto());
+        valores.put("descripcion", gastoNuevo.getDescripcion());
+        valores.put("fue_editado", 1); // <--- ¡AQUÍ ESTÁ LA MAGIA! Lo marcamos como editado para siempre
+
+        try {
+            db.update(TABLE_GASTOS, valores, "proveedor = ? AND monto = ? AND fecha = ?",
+                    new String[]{proveedorAntiguo, String.valueOf(montoAntiguo), gastoNuevo.getFecha()});
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        db.close();
     }
 }

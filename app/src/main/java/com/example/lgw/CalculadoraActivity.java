@@ -1,5 +1,6 @@
 package com.example.lgw; // Verifica que coincida exactamente con tu paquete
 
+import android.app.Dialog; // ¡Esta era la herramienta que faltaba para borrar lo rojo!
 import android.os.Bundle;
 import android.view.View;
 import android.widget.*;
@@ -35,7 +36,7 @@ public class CalculadoraActivity extends AppCompatActivity {
         tvModoFecha = findViewById(R.id.tv_modo_fecha);
         tvMontoTotal = findViewById(R.id.tv_monto_total);
         rvListaCalculadora = findViewById(R.id.rv_lista_calculadora);
-        btnAgregar = findViewById(R.id.btn_agregar_gasto); // Extraído al nivel principal
+        btnAgregar = findViewById(R.id.btn_agregar_gasto);
 
         // --- PASO B: CONEXIÓN A BASE DE DATO REAL Y CÁLCULOS ---
         DatabaseHelper db = new DatabaseHelper(CalculadoraActivity.this);
@@ -60,7 +61,6 @@ public class CalculadoraActivity extends AppCompatActivity {
         rvListaCalculadora.setAdapter(adapter);
 
         // --- PASO D: CONTROLADORES DE EVENTOS (LISTENERS) ---
-
         btnAgregar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -128,7 +128,6 @@ public class CalculadoraActivity extends AppCompatActivity {
                         return;
                     }
 
-                    // --- LA TRANSFORMACIÓN MATEMÁTICA ESTÁ AQUÍ ---
                     double montoUnitario = Double.parseDouble(montoStr);
                     String cantStr = etCantidad.getText().toString().trim();
                     int cantidad = cantStr.isEmpty() ? 1 : Integer.parseInt(cantStr);
@@ -155,16 +154,14 @@ public class CalculadoraActivity extends AppCompatActivity {
                 .setNegativeButton("Cancelar", null)
                 .show();
     }
+
     // Método para mostrar la tarjetita flotante
-    private void mostrarDialogoDetalle(final Gasto gastoSeleccionado) {
-        // 1. Crear el cuadro de diálogo conectado a tu XML
+    // Método para mostrar la tarjetita flotante
+    public void mostrarDialogoDetalle(final Gasto gastoSeleccionado) {
         final Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.dialog_detalle_gasto);
-
-        // (Opcional) Hacer el fondo transparente por si quieres redondear los bordes del XML luego
         dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
 
-        // 2. Vincular los elementos del XML a Java
         EditText etNombre = dialog.findViewById(R.id.etDetalleNombre);
         EditText etPrecio = dialog.findViewById(R.id.etDetallePrecio);
         EditText etDescripcion = dialog.findViewById(R.id.etDetalleDescripcion);
@@ -174,36 +171,108 @@ public class CalculadoraActivity extends AppCompatActivity {
         Button btnGuardar = dialog.findViewById(R.id.btnDetalleGuardar);
         Button btnCerrar = dialog.findViewById(R.id.btnDetalleCerrar);
 
-        // 3. Cargar los datos del gasto que se clickeó (Estado de Lectura)
-        etNombre.setText(gastoSeleccionado.getNombre());
-        etPrecio.setText(String.valueOf(gastoSeleccionado.getPrecio()));
+        etNombre.setText(gastoSeleccionado.getProveedor());
+        etPrecio.setText(String.valueOf(gastoSeleccionado.getMonto()));
         etDescripcion.setText(gastoSeleccionado.getDescripcion());
 
-        // 4. Lógica de los Botones
+        // BOTÓN CERRAR / CANCELAR
+        btnCerrar.setOnClickListener(v -> {
+            if (btnCerrar.getText().toString().equals("Cancelar")) {
+                etNombre.setFocusable(false);
+                etPrecio.setFocusable(false);
+                etDescripcion.setFocusable(false);
 
-        // Botón Cerrar (Normal o cuando dice Cancelar)
-        btnCerrar.setOnClickListener(v -> dialog.dismiss());
+                etNombre.setTextColor(android.graphics.Color.BLACK);
+                etPrecio.setTextColor(android.graphics.Color.BLACK);
+                etDescripcion.setTextColor(android.graphics.Color.BLACK);
 
-        // Botón Editar (Activa el Estado Amarillo)
+                etNombre.setText(gastoSeleccionado.getProveedor());
+                etPrecio.setText(String.valueOf(gastoSeleccionado.getMonto()));
+                etDescripcion.setText(gastoSeleccionado.getDescripcion());
+
+                btnEditar.setVisibility(View.VISIBLE);
+                btnGuardar.setVisibility(View.GONE);
+                btnCerrar.setText("Cerrar");
+            } else {
+                dialog.dismiss();
+            }
+        });
+
+        // BOTÓN EDITAR (AHORA CON EL VIGILANTE INTELIGENTE)
         btnEditar.setOnClickListener(v -> {
-            // Desbloquear los textos para que aparezca el teclado
             etNombre.setFocusableInTouchMode(true);
             etPrecio.setFocusableInTouchMode(true);
             etDescripcion.setFocusableInTouchMode(true);
 
-            // Tu directiva brillante: Cambiar el color a amarillo oscuro (Mostaza) para indicar edición
             int colorAmarillo = android.graphics.Color.parseColor("#FBC02D");
-            etNombre.setTextColor(colorAmarillo);
-            etPrecio.setTextColor(colorAmarillo);
-            etDescripcion.setTextColor(colorAmarillo);
+            int colorNegro = android.graphics.Color.parseColor("#000000");
 
-            // Cambiar la interfaz de botones
+            // --- EL VIGILANTE DE ESTADO ALTERADO ---
+            android.text.TextWatcher vigilante = new android.text.TextWatcher() {
+                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+                @Override public void afterTextChanged(android.text.Editable s) {
+                    if (!etNombre.getText().toString().equals(gastoSeleccionado.getProveedor())) {
+                        etNombre.setTextColor(colorAmarillo);
+                    } else { etNombre.setTextColor(colorNegro); }
+
+                    if (!etPrecio.getText().toString().equals(String.valueOf(gastoSeleccionado.getMonto()))) {
+                        etPrecio.setTextColor(colorAmarillo);
+                    } else { etPrecio.setTextColor(colorNegro); }
+
+                    if (!etDescripcion.getText().toString().equals(gastoSeleccionado.getDescripcion())) {
+                        etDescripcion.setTextColor(colorAmarillo);
+                    } else { etDescripcion.setTextColor(colorNegro); }
+                }
+            };
+
+            etNombre.addTextChangedListener(vigilante);
+            etPrecio.addTextChangedListener(vigilante);
+            etDescripcion.addTextChangedListener(vigilante);
+
             btnEditar.setVisibility(View.GONE);
             btnGuardar.setVisibility(View.VISIBLE);
             btnCerrar.setText("Cancelar");
         });
 
-        // 5. Mostrar la tarjetita en pantalla
+        // --- EL NUEVO MOTOR DE GUARDADO ---
+        // --- EL NUEVO MOTOR DE GUARDADO (VERSIÓN SIN ID) ---
+        btnGuardar.setOnClickListener(v -> {
+            try {
+                // 1. Guardamos las "huellas digitales" antiguas para encontrar el archivo
+                String proveedorAntiguo = gastoSeleccionado.getProveedor();
+                double montoAntiguo = gastoSeleccionado.getMonto();
+
+                // 2. Actualizamos los datos en el objeto con lo que tú escribiste
+                gastoSeleccionado.setProveedor(etNombre.getText().toString());
+                gastoSeleccionado.setMonto(Double.parseDouble(etPrecio.getText().toString()));
+                gastoSeleccionado.setDescripcion(etDescripcion.getText().toString());
+
+                // 3. Enviamos los datos nuevos y las huellas antiguas a la Base de Datos
+                DatabaseHelper db = new DatabaseHelper(CalculadoraActivity.this);
+                db.actualizarGastoSinId(gastoSeleccionado, proveedorAntiguo, montoAntiguo);
+
+                Toast.makeText(CalculadoraActivity.this, "Cambios guardados", Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+
+                // Recargamos la pantalla
+                finish();
+                startActivity(getIntent());
+                overridePendingTransition(0, 0);
+
+            } catch (Exception e) {
+                Toast.makeText(CalculadoraActivity.this, "Error al guardar", Toast.LENGTH_SHORT).show();
+            }
+        });
+
         dialog.show();
+
+        // Parche de estiramiento visual
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setLayout(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+            );
+        }
     }
 }

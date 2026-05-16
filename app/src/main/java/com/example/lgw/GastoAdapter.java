@@ -28,24 +28,44 @@ public class GastoAdapter extends RecyclerView.Adapter<GastoAdapter.GastoViewHol
 
     @Override
     public void onBindViewHolder(@NonNull GastoViewHolder holder, int position) {
-        Gasto gasto = listaGastos.get(position);
+        Gasto gastoActual = listaGastos.get(position);
 
         // Formateador de miles
         java.text.DecimalFormat formateador = new java.text.DecimalFormat("#,###");
 
         // Asignamos los textos reales
         holder.tvIndice.setText((position + 1) + ".");
-        holder.tvNombre.setText(gasto.getProveedor());
-        holder.tvPrecio.setText("$ " + formateador.format(gasto.getMonto()));
-
-        // CORRECCIÓN: Al presionar "detalle", extrae la descripción real del archivo
+        holder.tvNombre.setText(gastoActual.getProveedor());
+        holder.tvPrecio.setText("$ " + formateador.format(gastoActual.getMonto()));
+// --- EL PINTOR DE MEMORIA ---
+        if (gastoActual.getFueEditado() == 1) {
+            int colorAmarillo = android.graphics.Color.parseColor("#FBC02D");
+            holder.tvNombre.setTextColor(colorAmarillo);
+            holder.tvPrecio.setTextColor(colorAmarillo);
+        } else {
+            holder.tvNombre.setTextColor(android.graphics.Color.BLACK);
+            holder.tvPrecio.setTextColor(android.graphics.Color.BLACK);
+        }
+        // --- EL NUEVO CABLE MÁGICO (VERSIÓN ANTI-DISFRACES) ---
         holder.btnDetalle.setOnClickListener(v -> {
-            String detalleReal = gasto.getDescripcion();
-            // Si no tiene descripción, ponemos un aviso amigable
-            if (detalleReal == null || detalleReal.trim().isEmpty()) {
-                detalleReal = "Sin descripción registrada";
+            android.content.Context contexto = v.getContext();
+
+            // Bucle para quitarle los disfraces (ContextWrappers) al botón
+            while (contexto instanceof android.content.ContextWrapper) {
+                if (contexto instanceof CalculadoraActivity) {
+                    break;
+                }
+                contexto = ((android.content.ContextWrapper) contexto).getBaseContext();
             }
-            Toast.makeText(v.getContext(), "Detalle: " + detalleReal, Toast.LENGTH_SHORT).show();
+
+            // Ahora sí, con la actividad real desenmascarada, abrimos la ventana
+            if (contexto instanceof CalculadoraActivity) {
+                CalculadoraActivity actividad = (CalculadoraActivity) contexto;
+                actividad.mostrarDialogoDetalle(gastoActual);
+            } else {
+                // Seguro de vida: Si falla de nuevo, gritará un error en vez de quedarse callado
+                android.widget.Toast.makeText(v.getContext(), "Error de contexto", android.widget.Toast.LENGTH_SHORT).show();
+            }
         });
     }
 
