@@ -1,7 +1,6 @@
 package com.example.lgw;
 
 import com.opencsv.CSVReader;
-
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -9,41 +8,35 @@ import java.util.List;
 
 public class LectorArchivos {
 
-    public List<Gasto> procesarArchivo(InputStream inputStream) {
-        List<Gasto> listaGastos = new ArrayList<>();
-
+    public List<Gasto> procesarArchivo(InputStream is) {
+        List<Gasto> listaImportada = new ArrayList<>();
         try {
-            // REGLA DE NEGOCIO 0: El Estándar Industrial toma el control.
-            // CSVReader sabe perfectamente cómo lidiar con comas engañosas y comillas.
-            CSVReader reader = new CSVReader(new InputStreamReader(inputStream));
-            String[] partes;
+            CSVReader reader = new CSVReader(new InputStreamReader(is));
+            String[] fila;
 
-            // readNext() lee la línea y la separa inteligentemente de forma automática
-            while ((partes = reader.readNext()) != null) {
+            while ((fila = reader.readNext()) != null) {
+                // Filtro de seguridad: La fila debe tener 5 columnas y empezar con una fecha válida (contiene "/")
+                if (fila.length >= 5 && fila[0].contains("/")) {
 
-                // REGLA DE NEGOCIO 1: Si la línea está vacía, saltar
-                if (partes.length == 0 || (partes.length == 1 && partes[0].trim().isEmpty())) continue;
-
-                // REGLA DE NEGOCIO 2: Validación de estructura mínima (4 columnas)
-                if (partes.length >= 4) {
-                    String fecha = partes[0].trim();
-                    String proveedor = partes[1].trim();
-                    String descripcion = partes[3].trim();
+                    // Si es la fila de los títulos de las columnas, la saltamos
+                    if (fila[0].equalsIgnoreCase("Fecha")) continue;
 
                     try {
-                        // REGLA DE NEGOCIO 3: Transformación matemática estricta
-                        double monto = Double.parseDouble(partes[2].trim());
+                        String fecha = fila[0].trim();
+                        String tipoStr = fila[1].trim();
+                        String proveedor = fila[2].trim();
+                        double monto = Double.parseDouble(fila[3].trim());
+                        String descripcion = fila[4].trim();
 
-                        // REGLA DE NEGOCIO 4: Estandarización de valores absolutos
-                        if (monto < 0) {
-                            monto = monto * -1;
-                        }
+                        // Detectamos si la palabra dice Ingreso o Gasto
+                        int esVenta = tipoStr.contains("Ingreso") ? 1 : 0;
 
-                        Gasto nuevoGasto = new Gasto(fecha, proveedor, monto, descripcion);
-                        listaGastos.add(nuevoGasto);
+                        // Metemos el dato rescatado a la lista
+                        listaImportada.add(new Gasto(fecha, proveedor, monto, descripcion, esVenta));
 
-                    } catch (NumberFormatException e) {
-                        // Excepción controlada: Se ignora la fila con datos corruptos
+                    } catch (Exception e) {
+                        // Si una fila está rota, la ignora y sigue con la siguiente sin crashear la app
+                        continue;
                     }
                 }
             }
@@ -51,8 +44,6 @@ public class LectorArchivos {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        return listaGastos;
+        return listaImportada;
     }
-
 }

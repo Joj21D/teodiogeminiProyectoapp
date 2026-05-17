@@ -12,56 +12,90 @@ import java.util.List;
 
 public class ExportadorArchivos {
 
-    // Esta herramienta toma la lista de la bóveda y la transforma en un archivo real
     public String exportarCsv(CalculadoraActivity calculadoraActivity, List<Gasto> listaGastos) {
         try {
             OutputStream os;
             String rutaFinal = "Descargas";
+            String nombreArchivo = "Reporte_Tienda_" + System.currentTimeMillis() + ".csv";
 
-            // Le agregamos la hora exacta al nombre para que si exportas dos veces, no choquen ni se borren
-            String nombreArchivo = "gastos_tienda_" + System.currentTimeMillis() + ".csv";
-
-            // Android 10 o superior: Usamos MediaStore (El VIP Pass para que sea visible)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ContentValues resolver = new ContentValues();
                 resolver.put(MediaStore.MediaColumns.DISPLAY_NAME, nombreArchivo);
                 resolver.put(MediaStore.MediaColumns.MIME_TYPE, "text/csv");
                 resolver.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
 
-                // Insertamos el archivo vacío en las descargas y obtenemos la llave (URI)
                 Uri uri = calculadoraActivity.getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, resolver);
                 if (uri != null) {
                     os = calculadoraActivity.getContentResolver().openOutputStream(uri);
                 } else {
-                    return null; // Falló la creación
+                    return null;
                 }
             } else {
-                // Teléfonos antiguos (Método clásico)
                 java.io.File carpetaDescargas = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
                 java.io.File archivoFinal = new java.io.File(carpetaDescargas, nombreArchivo);
                 os = new java.io.FileOutputStream(archivoFinal);
                 rutaFinal = archivoFinal.getAbsolutePath();
             }
 
-            // 3. Encendemos tu máquina de escritura industrial, conectada al nuevo flujo
-            CSVWriter writer = new CSVWriter(new OutputStreamWriter(os));
+            // --- MAGIA ANTI-EXCEL ROTO ---
+            // Le decimos a la máquina que NO use comillas nunca (NO_QUOTE_CHARACTER)
+            CSVWriter writer = new CSVWriter(new OutputStreamWriter(os),
+                    ',',
+                    CSVWriter.NO_QUOTE_CHARACTER,
+                    CSVWriter.DEFAULT_ESCAPE_CHARACTER,
+                    CSVWriter.DEFAULT_LINE_END);
 
-            // 4. (Opcional pero elegante) Escribimos los títulos
-            String[] cabeceras = {"Fecha", "Proveedor", "Monto", "Descripcion"};
+            // --- BLOQUE 1: CABECERA SEGÚN TU FOTO (Sin tildes) ---
+            String fechaActual = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(new java.util.Date());
+            String[] titulo = {"Reporte " + fechaActual, "", "", "", ""};
+            String[] lineaVacia = {"", "", "", "", ""};
+
+            writer.writeNext(titulo);
+            writer.writeNext(lineaVacia);
+
+            // --- BLOQUE 2: COLUMNAS SEGÚN TU FOTO (Sin tildes) ---
+            String[] cabeceras = {"Fecha", "Tipo de (Gasto/Ingreso)", "Detalle/Proveedor", "Monto", "Descripcion"};
             writer.writeNext(cabeceras);
 
-            // 5. Recorremos los gastos
+            double acumuladoCompras = 0;
+            double acumuladoVentas = 0;
+
+            // --- BLOQUE 3: REGISTROS ---
             for (Gasto g : listaGastos) {
+                String tipoStr;
+                if (g.getEsVenta() == 1) {
+                    tipoStr = "Ingreso (Venta)";
+                    acumuladoVentas += g.getMonto();
+                } else {
+                    tipoStr = "Gasto (Compra)";
+                    acumuladoCompras += g.getMonto();
+                }
+
+                String montoFormateado = (g.getMonto() % 1 == 0) ? String.valueOf((int)g.getMonto()) : String.valueOf(g.getMonto());
+
+                // Limpieza de texto de usuario por si ponen tildes o saltos de línea (protege el CSV)
+                String descLimpia = g.getDescripcion().replace("\n", " ").replace(",", ".");
+                String provLimpio = g.getProveedor().replace("\n", " ").replace(",", ".");
+
                 String[] fila = {
                         g.getFecha(),
-                        g.getProveedor(),
-                        String.valueOf(g.getMonto()),
-                        g.getDescripcion()
+                        tipoStr,
+                        provLimpio,
+                        montoFormateado,
+                        descLimpia
                 };
                 writer.writeNext(fila);
             }
 
-            // Limpieza de memoria
+            // --- BLOQUE 4: TOTALES SEGÚN TU FOTO (Sin tildes) ---
+            double balanceNeto = acumuladoVentas - acumuladoCompras;
+
+            writer.writeNext(lineaVacia);
+            // Ponemos los resultados en la columna 3 y 4 para que queden bajo "Proveedor" y "Monto"
+            writer.writeNext(new String[]{"", "", "Total Gasto (Compras):", String.valueOf((int)acumuladoCompras), ""});
+            writer.writeNext(new String[]{"", "", "Total Ingreso (Ventas):", String.valueOf((int)acumuladoVentas), ""});
+            writer.writeNext(new String[]{"", "", "Balance Total:", String.valueOf((int)balanceNeto), ""});
+
             writer.close();
             os.close();
 

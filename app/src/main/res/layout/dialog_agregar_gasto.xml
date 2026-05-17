@@ -56,14 +56,14 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:hint="Precio (de 1 solo)"
+                android:hint="monto unitario"
                 android:inputType="numberDecimal"/>
 
         <EditText
                 android:id="@+id/et_nueva_cantidad"
                 android:layout_width="100dp"
                 android:layout_height="wrap_content"
-                android:hint="Cant (ej: 10)"
+                android:hint="Cant (1)"
                 android:inputType="number"
                 android:layout_marginStart="8dp"/>
     </LinearLayout>

@@ -17,7 +17,8 @@ public class MainActivity extends AppCompatActivity {
 
         // Vinculación con los nuevos IDs limpios
         btnCalculadora = findViewById(R.id.btn_abrir_calculadora);
-        btnResumen = findViewById(R.id.btn_resumen_main);
+        // Asumiendo que tu botón se llama btnResumen (cambia el nombre si usaste otro)
+        Button btnResumen = findViewById(R.id.btn_resumen_main);
         btnInstrucciones = findViewById(R.id.btn_instrucciones_main);
 
         // Evento: Abrir Calculadora
@@ -26,16 +27,22 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        // Evento: Resumen General (Módulo en construcción)
         btnResumen.setOnClickListener(v -> {
-            Toast.makeText(MainActivity.this, "Módulo de Resumen General en construcción", Toast.LENGTH_SHORT).show();
+            // El "Intent" es el vehículo que viaja de una pantalla a otra
+            android.content.Intent intent = new android.content.Intent(MainActivity.this, ResumenActivity.class);
+            startActivity(intent);
         });
 
         // Evento: Mostrar Instrucciones amigables para tu madre
-        btnInstrucciones.setOnClickListener(v -> {
-            Toast.makeText(MainActivity.this,
-                    "Manual: Presiona 'Tabla de datos' para registrar compras. Toca 'Detalle' en cualquier elemento para modificarlo o ver notas.",
-                    Toast.LENGTH_LONG).show();
-        });
+        // (Ajusta el nombre de la variable de tu botón si lo llamaste diferente)
+        Button btnInstrucciones = findViewById(R.id.btn_instrucciones_main);
+        btnInstrucciones.setOnClickListener(v -> mostrarInstrucciones());
+    }
+    private void mostrarInstrucciones() {
+        android.view.View viewDialogo = getLayoutInflater().inflate(R.layout.dialog_instrucciones, null);
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setView(viewDialogo)
+                .setPositiveButton("Entendido", null)
+                .show();
     }
 }

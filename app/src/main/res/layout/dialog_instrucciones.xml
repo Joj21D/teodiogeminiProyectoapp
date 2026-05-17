@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="24dp"
+            android:background="@android:color/white">
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+        <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Instrucciones de Uso"
+                android:textColor="#2196F3"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="16dp"
+                android:gravity="center"/>
+
+        <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="En la tabla de datos o calculadora puedes importar 📥, exportar 💾 y cambiar fecha a gusto 📅.\n\nApretando 'detalle' puedes ver más información del registro y puedes editar a gusto. Si editaste algo, el color del texto cambiará a amarillo para recordar el cambio.\n\nPuedes agregar en cualquier momento y en cualquier fecha cosas ➕. Abajo podrás ver el total de compras, el total de las ventas y el resultado neto DEL DÍA.\n\nEn Resumen General tendrás un resumen del día en donde podrás ver el número de ventas, el número de compras, cuál fue el gasto más grande, la venta más grande, y además el neto acumulado a través del mes."
+                android:textColor="#333333"
+                android:textSize="16sp"
+                android:lineSpacingExtra="6dp"/>
+
+    </LinearLayout>
+</ScrollView>

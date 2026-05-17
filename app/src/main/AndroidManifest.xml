@@ -21,7 +21,8 @@
             </intent-filter>
         </activity>
         <activity
-                android:name=".CalculadoraActivity"
+                android:name=".CalculadoraActivity"></activity>
+        <activity android:name=".ResumenActivity"
                 android:exported="false" />
     </application>
 

@@ -8,7 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "TiendaMamaDB";
-    private static final int DATABASE_VERSION = 3; // ¡NUEVA VERSIÓN!
+    private static final int DATABASE_VERSION = 3;
     private static final String TABLE_GASTOS = "gastos";
 
     public DatabaseHelper(Context context) {
@@ -24,7 +24,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + "monto REAL,"
                 + "descripcion TEXT,"
                 + "fue_editado INTEGER DEFAULT 0,"
-                + "es_venta INTEGER DEFAULT 0" + ")"; // <--- Nueva columna para saber si es venta
+                + "es_venta INTEGER DEFAULT 0" + ")";
         db.execSQL(CREATE_TABLE);
     }
 
@@ -43,7 +43,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put("monto", gasto.getMonto());
         values.put("descripcion", gasto.getDescripcion());
         values.put("fue_editado", gasto.getFueEditado());
-        values.put("es_venta", gasto.getEsVenta()); // Guardamos si es venta o compra
+        values.put("es_venta", gasto.getEsVenta());
 
         db.insert(TABLE_GASTOS, null, values);
         db.close();
@@ -63,8 +63,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         cursor.getString(2),
                         cursor.getDouble(3),
                         cursor.getString(4),
-                        cursor.getInt(5),    // fue_editado
-                        cursor.getInt(6)     // es_venta
+                        cursor.getInt(5),
+                        cursor.getInt(6)
                 );
                 listaGastos.add(gasto);
             } while (cursor.moveToNext());
@@ -82,7 +82,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         valores.put("monto", gastoNuevo.getMonto());
         valores.put("descripcion", gastoNuevo.getDescripcion());
         valores.put("fue_editado", 1);
-        // No actualizamos es_venta porque si era venta, sigue siendo venta
+        valores.put("es_venta", gastoNuevo.getEsVenta()); // NUEVO: Permite guardar el cambio de Gasto/Ingreso
 
         try {
             db.update(TABLE_GASTOS, valores, "proveedor = ? AND monto = ? AND fecha = ?",

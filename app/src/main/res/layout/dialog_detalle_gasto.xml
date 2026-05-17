@@ -1,116 +1,155 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent"
-              android:layout_height="wrap_content"
-              android:orientation="vertical"
-              android:padding="24dp"
-              android:background="#FFFFFF">
-
-    <TextView
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Detalle del Gasto"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:textColor="#333333"
-            android:gravity="center"
-            android:layout_marginBottom="16dp"/>
-
-    <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Nombre del Gasto:"
-            android:textColor="#666666"
-            android:textSize="14sp"/>
-    <EditText
-            android:id="@+id/etDetalleNombre"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@null"
-            android:textColor="#000000"
-            android:textSize="18sp"
-            android:paddingBottom="8dp"
-            android:focusable="false"
-            android:focusableInTouchMode="false"/>
-
-    <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Precio:"
-            android:textColor="#666666"
-            android:textSize="14sp"
-            android:layout_marginTop="8dp"/>
-    <EditText
-            android:id="@+id/etDetallePrecio"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@null"
-            android:textColor="#000000"
-            android:textSize="18sp"
-            android:inputType="numberDecimal"
-            android:paddingBottom="8dp"
-            android:focusable="false"
-            android:focusableInTouchMode="false"/>
-
-    <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Descripción:"
-            android:textColor="#666666"
-            android:textSize="14sp"
-            android:layout_marginTop="8dp"/>
-    <EditText
-            android:id="@+id/etDetalleDescripcion"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@null"
-            android:textColor="#000000"
-            android:textSize="18sp"
-            android:paddingBottom="8dp"
-            android:focusable="false"
-            android:focusableInTouchMode="false"/>
+            android:background="@android:color/white"
+            android:padding="20dp">
 
     <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="24dp"
-            android:gravity="end">
+            android:orientation="vertical">
 
-        <Button
-                android:id="@+id/btnDetalleBorrar"
-                android:layout_width="wrap_content"
+        <TextView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Borrar"
-                android:textColor="#D32F2F"
-                android:background="#00000000"
-                android:layout_marginEnd="8dp"/>
+                android:text="Detalle del Registro"
+                android:textColor="#2196F3"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="16dp"/>
 
-        <Button
-                android:id="@+id/btnDetalleEditar"
-                android:layout_width="wrap_content"
+        <RadioGroup
+                android:id="@+id/rgDetalleTipoTransaccion"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Editar"
-                android:textColor="#1976D2"
-                android:background="#00000000"
-                android:layout_marginEnd="8dp"/>
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp">
 
-        <Button
-                android:id="@+id/btnDetalleGuardar"
-                android:layout_width="wrap_content"
+            <RadioButton
+                    android:id="@+id/rbDetalleCompra"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Gasto"
+                    android:clickable="false"
+                    android:focusable="false"
+                    android:textColor="#000000"
+                    android:layout_weight="1"/>
+
+            <RadioButton
+                    android:id="@+id/rbDetalleVenta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ingreso"
+                    android:clickable="false"
+                    android:focusable="false"
+                    android:textColor="#000000"
+                    android:layout_weight="1"/>
+        </RadioGroup>
+
+        <EditText
+                android:id="@+id/etDetalleNombre"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Guardar"
-                android:textColor="#388E3C"
-                android:background="#00000000"
-                android:visibility="gone"
-                android:layout_marginEnd="8dp"/>
+                android:hint="Proveedor"
+                android:textColorHint="#9E9E9E"
+                android:focusable="false"
+                android:textColor="#000000"
+                android:layout_marginBottom="8dp"/>
 
-        <Button
-                android:id="@+id/btnDetalleCerrar"
-                android:layout_width="wrap_content"
+        <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Cerrar"
-                android:background="#00000000" />
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
 
+            <EditText
+                    android:id="@+id/etDetallePrecio"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:hint="Monto / Precio"
+                    android:textColorHint="#9E9E9E"
+                    android:inputType="numberDecimal"
+                    android:focusable="false"
+                    android:textColor="#000000"/>
+
+            <EditText
+                    android:id="@+id/etDetalleCantidad"
+                    android:layout_width="130dp"
+                    android:layout_height="wrap_content"
+                    android:hint="Cantidad ( 1 )"
+                    android:textColorHint="#9E9E9E"
+                    android:inputType="number"
+                    android:focusable="false"
+                    android:textColor="#000000"
+                    android:layout_marginStart="8dp"/>
+        </LinearLayout>
+
+        <EditText
+                android:id="@+id/etDetalleDescripcion"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Descripción"
+                android:textColorHint="#9E9E9E"
+                android:focusable="false"
+                android:textColor="#000000"
+                android:layout_marginBottom="16dp"/>
+
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+            <Button
+                    android:id="@+id/btnDetalleBorrar"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Borrar"
+                    android:maxLines="1"
+                    android:padding="4dp"
+                    android:backgroundTint="#F44336"
+                    android:textColor="#FFFFFF"
+                    android:layout_marginEnd="4dp"
+                    android:textSize="12sp"/>
+
+            <Button
+                    android:id="@+id/btnDetalleEditar"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Editar"
+                    android:maxLines="1"
+                    android:padding="4dp"
+                    android:layout_marginEnd="4dp"
+                    android:textSize="12sp"/>
+
+            <Button
+                    android:id="@+id/btnDetalleGuardar"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Guardar"
+                    android:maxLines="1"
+                    android:padding="4dp"
+                    android:visibility="gone"
+                    android:backgroundTint="#4CAF50"
+                    android:textColor="#FFFFFF"
+                    android:layout_marginEnd="4dp"
+                    android:textSize="12sp"/>
+
+            <Button
+                    android:id="@+id/btnDetalleCerrar"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Cerrar"
+                    android:maxLines="1"
+                    android:padding="4dp"
+                    android:backgroundTint="#9E9E9E"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"/>
+        </LinearLayout>
     </LinearLayout>
-</LinearLayout>
+</ScrollView>
