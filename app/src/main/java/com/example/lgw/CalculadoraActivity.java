@@ -21,8 +21,8 @@ public class CalculadoraActivity extends AppCompatActivity {
     private com.google.android.material.floatingactionbutton.FloatingActionButton btnAgregar;
 
     private GastoAdapter adapter;
-    private List<Gasto> listaGastosReales; // La bóveda completa
-    private List<Gasto> listaFiltrada;     // La lista que se está mostrando ahora mismo
+    private List<Gasto> listaGastosReales;
+    private List<Gasto> listaFiltrada;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,16 +37,12 @@ public class CalculadoraActivity extends AppCompatActivity {
         btnExportar = findViewById(R.id.btn_exportar);
         btnImportar = findViewById(R.id.btn_importar);
 
-        // 1. Extraemos todo de la bóveda
         DatabaseHelper db = new DatabaseHelper(this);
         listaGastosReales = db.obtenerTodosLosGastos();
 
-        // 2. Al abrir la app, mostramos todos los registros por defecto
         actualizarPantalla(listaGastosReales, "Todos los registros");
 
-        // 3. EL BOTÓN MÁGICO DEL CALENDARIO
         tvModoFecha.setOnClickListener(v -> mostrarCalendarioNativo());
-
         btnAgregar.setOnClickListener(v -> mostrarDialogoAgregar());
         btnVolver.setOnClickListener(v -> finish());
 
@@ -54,7 +50,6 @@ public class CalculadoraActivity extends AppCompatActivity {
             btnExportar.setOnClickListener(v -> {
                 try {
                     ExportadorArchivos exportador = new ExportadorArchivos();
-                    // Siempre exportamos la base de datos COMPLETA, no la filtrada
                     exportador.exportarCsv(CalculadoraActivity.this, listaGastosReales);
                     Toast.makeText(CalculadoraActivity.this, "¡Archivo exportado con éxito!", Toast.LENGTH_LONG).show();
                 } catch (Exception e) {
@@ -73,7 +68,6 @@ public class CalculadoraActivity extends AppCompatActivity {
         }
     }
 
-    // --- MOTOR CENTRAL DE ACTUALIZACIÓN VISUAL Y MATEMÁTICA ---
     private void actualizarPantalla(List<Gasto> listaAmostrar, String textoCabecera) {
         double totalCompras = 0.0;
         double totalVentas = 0.0;
@@ -88,7 +82,6 @@ public class CalculadoraActivity extends AppCompatActivity {
 
         double totalNeto = totalVentas - totalCompras;
 
-        // Le añadimos un emoji para que el usuario entienda que es un botón interactivo
         tvModoFecha.setText(textoCabecera + " 📅");
 
         java.text.DecimalFormat formateador = new java.text.DecimalFormat("#,###");
@@ -102,7 +95,6 @@ public class CalculadoraActivity extends AppCompatActivity {
         rvListaCalculadora.setAdapter(adapter);
     }
 
-    // --- MOTOR DEL CALENDARIO NATIVO ---
     private void mostrarCalendarioNativo() {
         final Calendar c = Calendar.getInstance();
         int year = c.get(Calendar.YEAR);
@@ -111,10 +103,8 @@ public class CalculadoraActivity extends AppCompatActivity {
 
         DatePickerDialog datePickerDialog = new DatePickerDialog(this,
                 (view, year1, monthOfYear, dayOfMonth) -> {
-                    // CUIDADO: El mes en Java empieza en 0, por eso le sumamos 1
                     String fechaElegida = String.format(java.util.Locale.getDefault(), "%02d/%02d/%04d", dayOfMonth, monthOfYear + 1, year1);
 
-                    // Filtramos la lista buscando solo los de esa fecha
                     listaFiltrada = new ArrayList<>();
                     for (Gasto g : listaGastosReales) {
                         if (g.getFecha().equals(fechaElegida)) {
@@ -126,12 +116,10 @@ public class CalculadoraActivity extends AppCompatActivity {
                         Toast.makeText(CalculadoraActivity.this, "No hay registros para " + fechaElegida, Toast.LENGTH_SHORT).show();
                     }
 
-                    // Actualizamos la pantalla con la nueva lista cortada
                     actualizarPantalla(listaFiltrada, "Fecha: " + fechaElegida);
 
                 }, year, month, day);
 
-        // Un botón salvavidas para quitar el filtro y ver todo de nuevo
         datePickerDialog.setButton(DatePickerDialog.BUTTON_NEUTRAL, "Ver Todos", (dialog, which) -> {
             actualizarPantalla(listaGastosReales, "Todos los registros");
         });
@@ -176,9 +164,15 @@ public class CalculadoraActivity extends AppCompatActivity {
                         descFinal = descStr + " (x" + cantidad + " a $" + precioIndStr + " c/u)";
                     }
 
-                    String fechaHoy = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(new java.util.Date());
+                    // BUG FIX: Respeta la fecha del calendario si está filtrada
+                    String fechaGuardado;
+                    if (tvModoFecha.getText().toString().contains("Fecha:")) {
+                        fechaGuardado = tvModoFecha.getText().toString().replace("Fecha: ", "").replace(" \uD83D\uDCC5", "").trim();
+                    } else {
+                        fechaGuardado = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(new java.util.Date());
+                    }
 
-                    Gasto nuevoGasto = new Gasto(fechaHoy, proveedorStr, montoTotalCalculado, descFinal, esVenta);
+                    Gasto nuevoGasto = new Gasto(fechaGuardado, proveedorStr, montoTotalCalculado, descFinal, esVenta);
 
                     DatabaseHelper dbBaza = new DatabaseHelper(CalculadoraActivity.this);
                     dbBaza.insertarGasto(nuevoGasto);
@@ -196,11 +190,16 @@ public class CalculadoraActivity extends AppCompatActivity {
         dialog.setContentView(R.layout.dialog_detalle_gasto);
         dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
 
+        // Muestra la fecha en el detalle
+        TextView tvFechaDisplay = dialog.findViewById(R.id.tvDetalleFechaDisplay);
+        tvFechaDisplay.setText("Registro del día: " + gastoSeleccionado.getFecha());
+
         EditText etNombre = dialog.findViewById(R.id.etDetalleNombre);
         EditText etPrecio = dialog.findViewById(R.id.etDetallePrecio);
         EditText etCantidad = dialog.findViewById(R.id.etDetalleCantidad);
         EditText etDescripcion = dialog.findViewById(R.id.etDetalleDescripcion);
 
+        RadioGroup rgTipo = dialog.findViewById(R.id.rgDetalleTipoTransaccion);
         RadioButton rbCompra = dialog.findViewById(R.id.rbDetalleCompra);
         RadioButton rbVenta = dialog.findViewById(R.id.rbDetalleVenta);
 
@@ -237,38 +236,7 @@ public class CalculadoraActivity extends AppCompatActivity {
                     .show();
         });
 
-        btnCerrar.setOnClickListener(v -> {
-            if (btnCerrar.getText().toString().equals("Cancelar")) {
-                etNombre.setFocusable(false);
-                etPrecio.setFocusable(false);
-                etCantidad.setFocusable(false);
-                etDescripcion.setFocusable(false);
-
-                rbCompra.setClickable(false);
-                rbVenta.setClickable(false);
-
-                etNombre.setTextColor(android.graphics.Color.BLACK);
-                etPrecio.setTextColor(android.graphics.Color.BLACK);
-                etDescripcion.setTextColor(android.graphics.Color.BLACK);
-
-                etNombre.setText(gastoSeleccionado.getProveedor());
-                etPrecio.setText(formateador.format(gastoSeleccionado.getMonto()));
-                etDescripcion.setText(gastoSeleccionado.getDescripcion());
-                etCantidad.setText("");
-
-                if (gastoSeleccionado.getEsVenta() == 1) {
-                    rbVenta.setChecked(true);
-                } else {
-                    rbCompra.setChecked(true);
-                }
-
-                btnEditar.setVisibility(View.VISIBLE);
-                btnGuardar.setVisibility(View.GONE);
-                btnCerrar.setText("Cerrar");
-            } else {
-                dialog.dismiss();
-            }
-        });
+        btnCerrar.setOnClickListener(v -> dialog.dismiss());
 
         btnEditar.setOnClickListener(v -> {
             etNombre.setFocusableInTouchMode(true);
@@ -276,8 +244,11 @@ public class CalculadoraActivity extends AppCompatActivity {
             etCantidad.setFocusableInTouchMode(true);
             etDescripcion.setFocusableInTouchMode(true);
 
-            rbCompra.setClickable(true);
-            rbVenta.setClickable(true);
+            // BUG FIX: Habilita interactividad real para que se pueda cambiar Gasto/Ingreso
+            for (int i = 0; i < rgTipo.getChildCount(); i++) {
+                rgTipo.getChildAt(i).setClickable(true);
+                rgTipo.getChildAt(i).setFocusableInTouchMode(true);
+            }
 
             int colorAmarillo = android.graphics.Color.parseColor("#FBC02D");
             int colorNegro = android.graphics.Color.parseColor("#000000");
@@ -318,6 +289,7 @@ public class CalculadoraActivity extends AppCompatActivity {
 
                 gastoSeleccionado.setProveedor(etNombre.getText().toString());
 
+                // BUG FIX: Lee correctamente si tu mamá cambió el botón
                 int esVentaNuevo = rbVenta.isChecked() ? 1 : 0;
                 gastoSeleccionado.setEsVenta(esVentaNuevo);
 
