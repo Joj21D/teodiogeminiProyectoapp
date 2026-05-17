@@ -61,7 +61,7 @@
     <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rv_lista_calculadora"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="0dp"
             android:layout_below="@id/header"
             android:layout_above="@id/footer"
             android:paddingBottom="80dp"
@@ -97,5 +97,6 @@
                 android:textStyle="bold"
                 android:gravity="center"/>
     </LinearLayout>
+
 
 </RelativeLayout>

@@ -18,6 +18,12 @@ public class GastoAdapter extends RecyclerView.Adapter<GastoAdapter.GastoViewHol
         this.listaGastos = listaGastos;
     }
 
+    // NEW: Method to update the list without creating a new adapter
+    public void actualizarLista(List<Gasto> nuevaLista) {
+        this.listaGastos = nuevaLista;
+        notifyDataSetChanged();
+    }
+
     @NonNull
     @Override
     public GastoViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {

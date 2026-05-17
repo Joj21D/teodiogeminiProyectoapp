@@ -28,7 +28,6 @@ public class ResumenActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_resumen);
 
-        // 1. Enlazamos los cables visuales
         tvFecha = findViewById(R.id.tv_resumen_fecha);
         tvMontoTotal = findViewById(R.id.tv_resumen_monto_total);
         tvVentaMayor = findViewById(R.id.tv_resumen_venta_mayor);
@@ -41,26 +40,31 @@ public class ResumenActivity extends AppCompatActivity {
 
         btnVolver.setOnClickListener(v -> finish());
 
-        // 2. Extraemos todo de tu Bóveda
         db = new DatabaseHelper(this);
         todosLosGastos = db.obtenerTodosLosGastos();
 
-        // 3. Sistema de Seguridad: Si la base está vacía
         if (todosLosGastos.isEmpty()) {
             tvFecha.setText("No hay datos registrados 📅");
             return;
         }
 
-        // 4. Por defecto, leemos la fecha del último día que tu mamá anotó algo
         String ultimaFecha = todosLosGastos.get(todosLosGastos.size() - 1).getFecha();
         calcularMetricas(ultimaFecha);
 
-        // 5. El Calendario Nativo (A prueba de usuarios)
         tvFecha.setOnClickListener(v -> mostrarCalendarioNativo());
     }
 
     private void mostrarCalendarioNativo() {
         final Calendar c = Calendar.getInstance();
+
+        try {
+            String cabecera = tvFecha.getText().toString();
+            if (cabecera.contains("Fecha:")) {
+                String fechaLimpia = cabecera.replaceAll("[^0-9/]", "");
+                c.setTime(sdf.parse(fechaLimpia));
+            }
+        } catch (Exception e) {}
+
         int year = c.get(Calendar.YEAR);
         int month = c.get(Calendar.MONTH);
         int day = c.get(Calendar.DAY_OF_MONTH);
@@ -73,9 +77,9 @@ public class ResumenActivity extends AppCompatActivity {
         datePickerDialog.show();
     }
 
-    // --- EL CEREBRO MATEMÁTICO ---
     private void calcularMetricas(String fechaTarget) {
-        tvFecha.setText("Fecha: " + fechaTarget + " 📅");
+        String fechaTargetLimpia = fechaTarget.replaceAll("[^0-9/]", "");
+        tvFecha.setText("Fecha: " + fechaTargetLimpia + " 📅");
 
         double ventasHoy = 0, comprasHoy = 0;
         double ventaMayor = 0, gastoMayor = 0;
@@ -85,70 +89,65 @@ public class ResumenActivity extends AppCompatActivity {
         double ventasMes = 0, comprasMes = 0;
         double ventasAyer = 0, comprasAyer = 0;
 
-        // Extraemos el Mes y calculamos matemáticamente cuál fue el día de ayer
-        String mesAnoTarget = fechaTarget.substring(3); // Saca el "MM/yyyy"
-        String fechaAyer = obtenerFechaAyer(fechaTarget);
+        String mesAnoTarget = fechaTargetLimpia.length() >= 7 ? fechaTargetLimpia.substring(3) : "";
+        String fechaAyerLimpia = obtenerFechaAyer(fechaTargetLimpia).replaceAll("[^0-9/]", "");
 
-        // Motor de búsqueda de ultra-alta velocidad
         for (Gasto g : todosLosGastos) {
+            // DOBLE KATANA PARA LAS MATEMÁTICAS
+            String fechaDB = g.getFecha() != null ? g.getFecha().replaceAll("[^0-9/]", "") : "";
 
-            // A) Filtro del Día Exacto
-            if (g.getFecha().equals(fechaTarget)) {
+            if (fechaDB.equals(fechaTargetLimpia)) {
                 if (g.getEsVenta() == 1) {
                     ventasHoy += g.getMonto();
                     cantVentas++;
-                    if (g.getMonto() > ventaMayor) { // Guardamos el más grande
+                    if (g.getMonto() > ventaMayor) {
                         ventaMayor = g.getMonto();
                         nombreVentaMayor = g.getProveedor();
                     }
                 } else {
                     comprasHoy += g.getMonto();
                     cantCompras++;
-                    if (g.getMonto() > gastoMayor) { // Guardamos el gasto más doloroso
+                    if (g.getMonto() > gastoMayor) {
                         gastoMayor = g.getMonto();
                         nombreGastoMayor = g.getProveedor();
                     }
                 }
             }
 
-            // B) Filtro de Ayer (Para comparar)
-            if (g.getFecha().equals(fechaAyer)) {
+            if (fechaDB.equals(fechaAyerLimpia)) {
                 if (g.getEsVenta() == 1) { ventasAyer += g.getMonto(); }
                 else { comprasAyer += g.getMonto(); }
             }
 
-            // C) Filtro del Mes (Acumulado)
-            if (g.getFecha().endsWith(mesAnoTarget)) {
+            if (!mesAnoTarget.isEmpty() && fechaDB.endsWith(mesAnoTarget)) {
                 if (g.getEsVenta() == 1) { ventasMes += g.getMonto(); }
                 else { comprasMes += g.getMonto(); }
             }
         }
 
-        // Resultados Finales
         double netoHoy = ventasHoy - comprasHoy;
         double netoAyer = ventasAyer - comprasAyer;
         double diferenciaAyer = netoHoy - netoAyer;
         double netoMes = ventasMes - comprasMes;
 
-        // Inyección a los textos de la pantalla
         tvMontoTotal.setText("$ " + formateador.format(netoHoy));
         tvVentaMayor.setText("Venta Mayor: $" + formateador.format(ventaMayor) + " (" + nombreVentaMayor + ")");
         tvGastoMayor.setText("Gasto Mayor: $" + formateador.format(gastoMayor) + " (" + nombreGastoMayor + ")");
 
-        String prefijoDif = diferenciaAyer > 0 ? "+" : "";
-        tvDiferenciaAyer.setText("Diferencia de ayer: " + prefijoDif + "$" + formateador.format(diferenciaAyer));
-        tvNetoMes.setText("Neto Acumulado mes (" + mesAnoTarget + "): $" + formateador.format(netoMes));
+        String prefijoDif = diferenciaAyer > 0 ? "+$" : (diferenciaAyer < 0 ? "-$" : "$");
+        tvDiferenciaAyer.setText("Diferencia de ayer: " + prefijoDif + formateador.format(Math.abs(diferenciaAyer)));
+
+        String prefijoMes = netoMes < 0 ? "-$" : "$";
+        tvNetoMes.setText("Neto Acumulado mes (" + mesAnoTarget + "): " + prefijoMes + formateador.format(Math.abs(netoMes)));
 
         tvCantCompras.setText("Compras: " + cantCompras);
         tvCantVentas.setText("Ventas: " + cantVentas);
 
-        // UX de Semáforo (Verde = Dinero a favor, Rojo = Pérdida)
         tvMontoTotal.setTextColor(netoHoy >= 0 ? android.graphics.Color.parseColor("#4CAF50") : android.graphics.Color.parseColor("#F44336"));
         tvDiferenciaAyer.setTextColor(diferenciaAyer >= 0 ? android.graphics.Color.parseColor("#4CAF50") : android.graphics.Color.parseColor("#F44336"));
         tvNetoMes.setTextColor(netoMes >= 0 ? android.graphics.Color.parseColor("#2196F3") : android.graphics.Color.parseColor("#F44336"));
     }
 
-    // Herramienta de Ingeniería de Tiempo (Resta 1 día al calendario)
     private String obtenerFechaAyer(String fechaHoyStr) {
         try {
             Date fecha = sdf.parse(fechaHoyStr);
