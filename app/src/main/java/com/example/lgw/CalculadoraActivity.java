@@ -50,7 +50,7 @@ public class CalculadoraActivity extends AppCompatActivity {
             btnExportar.setOnClickListener(v -> {
                 try {
                     ExportadorArchivos exportador = new ExportadorArchivos();
-                    exportador.exportarCsv(CalculadoraActivity.this, listaGastosReales);
+                    exportador.exportarExcel(CalculadoraActivity.this, listaGastosReales);
                     Toast.makeText(CalculadoraActivity.this, "¡Archivo exportado con éxito!", Toast.LENGTH_LONG).show();
                 } catch (Exception e) {
                     Toast.makeText(CalculadoraActivity.this, "Error al exportar", Toast.LENGTH_SHORT).show();

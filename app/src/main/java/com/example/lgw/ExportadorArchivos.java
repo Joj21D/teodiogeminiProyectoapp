@@ -1,109 +1,113 @@
 package com.example.lgw;
 
-import android.content.ContentValues;
-import android.net.Uri;
-import android.os.Build;
+import android.content.Context;
 import android.os.Environment;
-import android.provider.MediaStore;
-import com.opencsv.CSVWriter;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
+import android.widget.Toast;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.util.CellRangeAddress;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.List;
 
 public class ExportadorArchivos {
 
-    public String exportarCsv(CalculadoraActivity calculadoraActivity, List<Gasto> listaGastos) {
-        try {
-            OutputStream os;
-            String rutaFinal = "Descargas";
-            String nombreArchivo = "Reporte_Tienda_" + System.currentTimeMillis() + ".csv";
+    public static void exportarExcel(Context context, List<Gasto> listaGastos) {
+        // 1. Creamos el libro de Excel y la primera hoja
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Resumen Financiero");
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                ContentValues resolver = new ContentValues();
-                resolver.put(MediaStore.MediaColumns.DISPLAY_NAME, nombreArchivo);
-                resolver.put(MediaStore.MediaColumns.MIME_TYPE, "text/csv");
-                resolver.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+        // 2. Configuramos el tamaño de las columnas (como pediste)
+        sheet.setColumnWidth(1, 4000); // Columna B: Fecha
+        sheet.setColumnWidth(2, 8000); // Columna C: Descripción (Más ancha)
+        sheet.setColumnWidth(3, 4000); // Columna D: Venta/Gasto
+        sheet.setColumnWidth(4, 5000); // Columna E: Proveedor
+        sheet.setColumnWidth(5, 4000); // Columna F: Monto
 
-                Uri uri = calculadoraActivity.getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, resolver);
-                if (uri != null) {
-                    os = calculadoraActivity.getContentResolver().openOutputStream(uri);
-                } else {
-                    return null;
-                }
+        // 3. Estilos de Colores
+        CellStyle estiloCabecera = workbook.createCellStyle();
+        Font fuenteCabecera = workbook.createFont();
+        fuenteCabecera.setBold(true);
+        estiloCabecera.setFont(fuenteCabecera);
+        estiloCabecera.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        estiloCabecera.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        CellStyle estiloGasto = workbook.createCellStyle();
+        estiloGasto.setFillForegroundColor(IndexedColors.LIGHT_ORANGE.getIndex());
+        estiloGasto.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        CellStyle estiloVenta = workbook.createCellStyle();
+        estiloVenta.setFillForegroundColor(IndexedColors.LIGHT_GREEN.getIndex());
+        estiloVenta.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        // 4. Creamos la Cabecera en la Fila 5 (Índice 4 en Java)
+        Row cabecera = sheet.createRow(4);
+        String[] titulos = {"", "Fecha", "Descripcion", "Venta/Gasto", "Proveedor", "Monto"};
+        for (int i = 1; i <= 5; i++) {
+            Cell celda = cabecera.createCell(i);
+            celda.setCellValue(titulos[i]);
+            celda.setCellStyle(estiloCabecera);
+        }
+
+        // 5. Llenamos los datos desde SQLite
+        int filaActual = 5;
+        double ventaMayor = 0, gastoMayor = 0, neto = 0;
+
+        for (Gasto gasto : listaGastos) {
+            Row fila = sheet.createRow(filaActual++);
+
+            fila.createCell(1).setCellValue(gasto.getFecha());
+            fila.createCell(2).setCellValue(gasto.getDescripcion());
+
+            String tipo = gasto.getEsVenta() == 1 ? "Venta" : "Gasto";
+            Cell celdaTipo = fila.createCell(3);
+            celdaTipo.setCellValue(tipo);
+            celdaTipo.setCellStyle(gasto.getEsVenta() == 1 ? estiloVenta : estiloGasto);
+
+            fila.createCell(4).setCellValue(gasto.getProveedor());
+            fila.createCell(5).setCellValue(gasto.getMonto());
+
+            // Cálculos para el panel lateral
+            if (gasto.getEsVenta() == 1) {
+                if (gasto.getMonto() > ventaMayor) ventaMayor = gasto.getMonto();
+                neto += gasto.getMonto();
             } else {
-                java.io.File carpetaDescargas = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-                java.io.File archivoFinal = new java.io.File(carpetaDescargas, nombreArchivo);
-                os = new java.io.FileOutputStream(archivoFinal);
-                rutaFinal = archivoFinal.getAbsolutePath();
+                if (gasto.getMonto() > gastoMayor) gastoMayor = gasto.getMonto();
+                neto -= gasto.getMonto();
             }
+        }
 
-            // --- MAGIA ANTI-EXCEL ROTO ---
-            // Le decimos a la máquina que NO use comillas nunca (NO_QUOTE_CHARACTER)
-            CSVWriter writer = new CSVWriter(new OutputStreamWriter(os),
-                    ',',
-                    CSVWriter.NO_QUOTE_CHARACTER,
-                    CSVWriter.DEFAULT_ESCAPE_CHARACTER,
-                    CSVWriter.DEFAULT_LINE_END);
+        // 6. El Panel de Resumen Lateral (Combinando Celdas)
+        // Combinamos celdas J5:K5 para el título del resumen
+        sheet.addMergedRegion(new CellRangeAddress(4, 4, 9, 10));
+        Row filaResumenTitulo = sheet.getRow(4);
+        if (filaResumenTitulo == null) filaResumenTitulo = sheet.createRow(4);
+        Cell celdaResumen = filaResumenTitulo.createCell(9);
+        celdaResumen.setCellValue("Resumen general");
+        celdaResumen.setCellStyle(estiloCabecera);
 
-            // --- BLOQUE 1: CABECERA SEGÚN TU FOTO (Sin tildes) ---
-            String fechaActual = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(new java.util.Date());
-            String[] titulo = {"Reporte " + fechaActual, "", "", "", ""};
-            String[] lineaVacia = {"", "", "", "", ""};
+        // Datos del Resumen
+        sheet.getRow(5).createCell(9).setCellValue("Venta mayor:");
+        sheet.getRow(5).createCell(10).setCellValue(ventaMayor);
 
-            writer.writeNext(titulo);
-            writer.writeNext(lineaVacia);
+        sheet.getRow(6).createCell(9).setCellValue("Gasto mayor:");
+        sheet.getRow(6).createCell(10).setCellValue(gastoMayor);
 
-            // --- BLOQUE 2: COLUMNAS SEGÚN TU FOTO (Sin tildes) ---
-            String[] cabeceras = {"Fecha", "Tipo de (Gasto/Ingreso)", "Detalle/Proveedor", "Monto", "Descripcion"};
-            writer.writeNext(cabeceras);
+        sheet.getRow(7).createCell(9).setCellValue("Acumulado neto:");
+        sheet.getRow(7).createCell(10).setCellValue(neto);
 
-            double acumuladoCompras = 0;
-            double acumuladoVentas = 0;
-
-            // --- BLOQUE 3: REGISTROS ---
-            for (Gasto g : listaGastos) {
-                String tipoStr;
-                if (g.getEsVenta() == 1) {
-                    tipoStr = "Ingreso (Venta)";
-                    acumuladoVentas += g.getMonto();
-                } else {
-                    tipoStr = "Gasto (Compra)";
-                    acumuladoCompras += g.getMonto();
-                }
-
-                String montoFormateado = (g.getMonto() % 1 == 0) ? String.valueOf((int)g.getMonto()) : String.valueOf(g.getMonto());
-
-                // Limpieza de texto de usuario por si ponen tildes o saltos de línea (protege el CSV)
-                String descLimpia = g.getDescripcion().replace("\n", " ").replace(",", ".");
-                String provLimpio = g.getProveedor().replace("\n", " ").replace(",", ".");
-
-                String[] fila = {
-                        g.getFecha(),
-                        tipoStr,
-                        provLimpio,
-                        montoFormateado,
-                        descLimpia
-                };
-                writer.writeNext(fila);
-            }
-
-            // --- BLOQUE 4: TOTALES SEGÚN TU FOTO (Sin tildes) ---
-            double balanceNeto = acumuladoVentas - acumuladoCompras;
-
-            writer.writeNext(lineaVacia);
-            // Ponemos los resultados en la columna 3 y 4 para que queden bajo "Proveedor" y "Monto"
-            writer.writeNext(new String[]{"", "", "Total Gasto (Compras):", String.valueOf((int)acumuladoCompras), ""});
-            writer.writeNext(new String[]{"", "", "Total Ingreso (Ventas):", String.valueOf((int)acumuladoVentas), ""});
-            writer.writeNext(new String[]{"", "", "Balance Total:", String.valueOf((int)balanceNeto), ""});
-
-            writer.close();
-            os.close();
-
-            return rutaFinal;
-
+        // 7. Guardar el archivo en el teléfono
+        try {
+            File directorio = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            File archivo = new File(directorio, "ReporteFinanciero.xlsx");
+            FileOutputStream outputStream = new FileOutputStream(archivo);
+            workbook.write(outputStream);
+            outputStream.close();
+            workbook.close();
+            Toast.makeText(context, "Excel profesional creado en Descargas", Toast.LENGTH_LONG).show();
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
+            Toast.makeText(context, "Error al crear Excel", Toast.LENGTH_SHORT).show();
         }
     }
 }
