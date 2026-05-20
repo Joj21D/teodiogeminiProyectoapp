@@ -7,6 +7,7 @@ public class Gasto {
     private String descripcion;
     private int fueEditado;
     private int esVenta; // NUEVO: 0 = Compra (Gasto), 1 = Venta (Ingreso)
+    private int id; // NUEVO: Identificador único de la base de datos
 
     // Constructor completo (usado por la Bóveda)
     public Gasto(String fecha, String proveedor, double monto, String descripcion, int fueEditado, int esVenta) {
@@ -50,4 +51,6 @@ public class Gasto {
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
     public void setFueEditado(int fueEditado) { this.fueEditado = fueEditado; }
     public void setEsVenta(int esVenta) { this.esVenta = esVenta; }
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 }

@@ -66,6 +66,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         cursor.getInt(5),
                         cursor.getInt(6)
                 );
+                gasto.setId(cursor.getInt(0)); // NUEVO: Atrapamos el ID único (Columna 0)
                 listaGastos.add(gasto);
             } while (cursor.moveToNext());
         }
@@ -98,6 +99,34 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         try {
             db.delete("gastos", "proveedor = ? AND monto = ? AND fecha = ?",
                     new String[]{gastoTarget.getProveedor(), String.valueOf(gastoTarget.getMonto()), gastoTarget.getFecha()});
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        db.close();
+    }
+    public void borrarGastoPorId(int id) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            // Borra exclusivamente el registro que tenga este ID exacto
+            db.delete("gastos", "id = ?", new String[]{String.valueOf(id)});
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        db.close();
+    }
+    public void actualizarGastoPorId(Gasto gastoNuevo) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues valores = new ContentValues();
+
+        valores.put("proveedor", gastoNuevo.getProveedor());
+        valores.put("monto", gastoNuevo.getMonto());
+        valores.put("descripcion", gastoNuevo.getDescripcion());
+        valores.put("fue_editado", 1);
+        valores.put("es_venta", gastoNuevo.getEsVenta());
+
+        try {
+            // Actualiza SOLO el que tenga el ID exacto
+            db.update("gastos", valores, "id = ?", new String[]{String.valueOf(gastoNuevo.getId())});
         } catch (Exception e) {
             e.printStackTrace();
         }
